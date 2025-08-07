@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Consultation;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ConsultationController extends Controller
 {
@@ -83,5 +85,58 @@ class ConsultationController extends Controller
         $consultation->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function storeWithInvoice(Request $request)
+    {
+        $validatedData = $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'reason' => 'required|string|max:255',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.price' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($validatedData) {
+                // 1. Créer la consultation
+                $newConsultation = Consultation::create([
+                    'patient_id' => $validatedData['patient_id'],
+                    'date' => now(),
+                    'reason' => $validatedData['reason'],
+                    'assessment' => 'Facturation initiale', // Diagnostic par défaut
+                    'is_completed' => false, // Marquer comme terminée
+                ]);
+
+                // 2. Créer la facture
+                $newInvoice = Invoice::create([
+                    'patient_id' => $validatedData['patient_id'],
+                    'date' => now(),
+                    'status' => 'En attente', // On suppose qu'elle est payée sur place
+                    'amount' => $validatedData['amount'],
+                    'invoice_number' => 'FACT-' . date('Ymd') . '-' . (Invoice::count() + 1),
+                ]);
+
+                // 3. Ajouter les lignes à la facture
+                foreach ($validatedData['items'] as $item) {
+                    $newInvoice->items()->create([
+                        'description' => $item['description'],
+                        'price' => $item['price'],
+                    ]);
+                }
+
+                // Charger les relations pour la réponse
+                $newConsultation->load('patient');
+                $newInvoice->load(['patient', 'items']);
+
+                return ['newConsultation' => $newConsultation, 'newInvoice' => $newInvoice];
+            });
+
+            return response()->json($result, 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Une erreur est survenue lors de la création.', 'error' => $e->getMessage()], 500);
+        }
     }
 }

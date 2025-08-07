@@ -15,6 +15,7 @@ Route::prefix('action')->group(function () {
     Route::post('/patients', [PatientController::class, 'store']);
     Route::put('/patients/{patient}', [PatientController::class, 'update']);
     Route::delete('/patients/{patient}', [PatientController::class, 'destroy']);
+    Route::post('/consultation-and-invoice', [ConsultationController::class, 'storeWithInvoice']);
 
     // Rendez-vous
     Route::post('/appointments', [AppointmentController::class, 'store']);
