@@ -18,44 +18,50 @@ class InvoiceController extends Controller
         
         return response()->json($invoice);
     }
-    
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'date' => 'required|date',
-            'status' => 'required|string',
-            'items' => 'required|array|min:1',
-            'items.*.description' => 'required|string',
-            'items.*.price' => 'required|numeric|min:0',
-            'amount' => 'required|numeric|min:0',
+
+public function store(Request $request)
+{
+    $validatedData = $request->validate([
+        'patient_id' => 'required|exists:patients,id',
+        'date' => 'required|date',
+        'status' => 'required|string',
+        'items' => 'required|array|min:1',
+        'items.*.description' => 'required|string',
+        'items.*.price' => 'required|numeric|min:0',
+        'amount' => 'required|numeric|min:0',
+    ]);
+
+    // Utiliser une transaction pour assurer l'intégrité des données
+    $invoice = DB::transaction(function () use ($validatedData) {
+        // 1. Créez la facture avec un numéro temporaire
+        $newInvoice = Invoice::create([
+            'patient_id' => $validatedData['patient_id'],
+            'date' => $validatedData['date'],
+            'status' => $validatedData['status'],
+            'amount' => $validatedData['amount'],
+            'invoice_number' => 'TEMP-' . uniqid(), // Numéro temporaire unique
         ]);
 
-        // Utiliser une transaction pour assurer l'intégrité des données
-        $invoice = DB::transaction(function () use ($validatedData) {
-            $newInvoice = Invoice::create([
-                'patient_id' => $validatedData['patient_id'],
-                'date' => $validatedData['date'],
-                'status' => $validatedData['status'],
-                'amount' => $validatedData['amount'],
-                'invoice_number' => 'FACT-' . date('Ymd') . '-' . (Invoice::count() + 1),
+        // 2. Mettez à jour avec le numéro de facture final basé sur l'ID
+        $newInvoice->invoice_number = 'FACT-' . now()->format('Ymd') . '-' . $newInvoice->id;
+        $newInvoice->save();
+
+        // 3. Ajoutez les lignes de la facture
+        foreach ($validatedData['items'] as $item) {
+            $newInvoice->items()->create([
+                'description' => $item['description'],
+                'price' => $item['price'],
             ]);
+        }
 
-            foreach ($validatedData['items'] as $item) {
-                $newInvoice->items()->create([
-                    'description' => $item['description'],
-                    'price' => $item['price'],
-                ]);
-            }
+        return $newInvoice;
+    });
 
-            return $newInvoice;
-        });
+    // Charger les relations pour la réponse JSON
+    $invoice->load('patient', 'items');
 
-        // Charger les relations pour la réponse JSON
-        $invoice->load('patient', 'items');
-
-        return response()->json($invoice, 201);
-    }
+    return response()->json($invoice, 201);
+}
 
     public function update(Request $request, Invoice $invoice)
     {
