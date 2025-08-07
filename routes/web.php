@@ -26,6 +26,7 @@ Route::prefix('action')->group(function () {
     Route::post('/consultations', [ConsultationController::class, 'store']);
     Route::put('/consultations/{consultation}', [ConsultationController::class, 'update']);
     Route::delete('/consultations/{consultation}', [ConsultationController::class, 'destroy']);
+    Route::get('/consultations/{consultation}', [ConsultationController::class, 'show']);
 
     // Tarifs (Types de consultation)
     Route::post('/consultation-types', [ConsultationTypeController::class, 'store']);

@@ -16,6 +16,16 @@ class ConsultationController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
+
+ public function show(Consultation $consultation)
+    {
+        // 'load' s'assure que les relations 'patient', 'prescriptions', et 'documents' 
+        // sont incluses dans la réponse JSON.
+        $consultation->load('patient');
+        
+        return response()->json($consultation);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -87,6 +97,9 @@ class ConsultationController extends Controller
         return response()->json(null, 204);
     }
 
+/**
+     * Crée une nouvelle consultation et sa facture associée en une seule transaction.
+     */
     public function storeWithInvoice(Request $request)
     {
         $validatedData = $request->validate([
@@ -100,20 +113,25 @@ class ConsultationController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validatedData) {
+                // Crée une chaîne de caractères à partir des descriptions des articles
+                $assessmentText = collect($validatedData['items'])
+                                    ->pluck('description')
+                                    ->join(', ');
+
                 // 1. Créer la consultation
                 $newConsultation = Consultation::create([
                     'patient_id' => $validatedData['patient_id'],
                     'date' => now(),
                     'reason' => $validatedData['reason'],
-                    'assessment' => 'Facturation initiale', // Diagnostic par défaut
-                    'is_completed' => false, // Marquer comme terminée
+                    'assessment' => $assessmentText, // Utilise le texte généré comme diagnostic
+                    'is_completed' => true,
                 ]);
 
                 // 2. Créer la facture
                 $newInvoice = Invoice::create([
                     'patient_id' => $validatedData['patient_id'],
                     'date' => now(),
-                    'status' => 'En attente', // On suppose qu'elle est payée sur place
+                    'status' => 'Payée',
                     'amount' => $validatedData['amount'],
                     'invoice_number' => 'FACT-' . date('Ymd') . '-' . (Invoice::count() + 1),
                 ]);
