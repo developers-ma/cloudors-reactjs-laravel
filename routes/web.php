@@ -9,6 +9,7 @@ use App\Http\Controllers\ConsultationTypeController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\WaitingRoomController;
 
 Route::prefix('action')->group(function () {
     // Patients
@@ -22,6 +23,13 @@ Route::prefix('action')->group(function () {
     Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy']);
     
+    // Salle d'attente
+    Route::post('/waiting-room/add', [WaitingRoomController::class, 'add']);
+    Route::post('/waiting-room/call', [WaitingRoomController::class, 'call']);
+    Route::post('/waiting-room/end', [WaitingRoomController::class, 'end']);
+    Route::post('/waiting-room/return', [WaitingRoomController::class, 'returnToWaiting']);
+    Route::get('/waiting-room/status', [WaitingRoomController::class, 'getStatus']);
+
     // Consultations
     Route::post('/consultations', [ConsultationController::class, 'store']);
     Route::put('/consultations/{consultation}', [ConsultationController::class, 'update']);

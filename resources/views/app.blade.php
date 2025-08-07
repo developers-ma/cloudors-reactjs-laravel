@@ -7,7 +7,7 @@
        <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Vite + React</title>
-    <script type="module" crossorigin src="/cloudors/dist/assets/index-CjT_x-Wg.js"></script>
+    <script type="module" crossorigin src="/cloudors/dist/assets/index-B0SRNT4X.js"></script>
     <link rel="stylesheet" crossorigin href="/cloudors/dist//assets/index-B9gS5PRV.css">
   </head>
   <body>
