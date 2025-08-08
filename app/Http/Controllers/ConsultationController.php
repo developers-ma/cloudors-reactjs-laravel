@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Models\ClinicStatus; // Assurez-vous d'importer le modèle en haut de votre fichier
 
 class ConsultationController extends Controller
 {
@@ -113,6 +114,12 @@ class ConsultationController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validatedData) {
+                // Le patient est automatiquement ajouté à la salle d'attente.
+            ClinicStatus::updateOrCreate(
+                ['patient_id' => $validatedData['patient_id']],
+                ['status' => 'waiting', 'arrival_time' => now()]
+            );
+            
                 // Crée une chaîne de caractères à partir des descriptions des articles
                 $assessmentText = collect($validatedData['items'])
                                     ->pluck('description')

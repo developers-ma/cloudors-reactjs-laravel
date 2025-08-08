@@ -27,7 +27,7 @@ class AppController extends Controller
         // Rassemble toutes les données nécessaires pour l'application
         $initialData = [
             'patients' => Patient::orderBy('name')->get(),
-            'consultations' => Consultation::with('patient:id,name,dob')->latest('date')->get(),
+            'consultations' => Consultation::with('patient:id,name,dob')->latest('id')->get(),
             'invoices' => Invoice::with('patient:id,name')->latest('date')->get(),
             'appointments' => Appointment::latest('date')->get(),
             'consultationTypes' => ConsultationType::all(),
