@@ -29,7 +29,7 @@ class AppController extends Controller
             'patients' => Patient::orderBy('name')->get(),
             'consultations' => Consultation::with('patient:id,name,dob')->latest('id')->get(),
             'invoices' => Invoice::with('patient:id,name')->latest('date')->get(),
-            'appointments' => Appointment::latest('date')->get(),
+            'appointments' => Appointment::orderBy('date', 'asc')->get(),
             'consultationTypes' => ConsultationType::all(),
             'settings' => $settings,
             'authUser' => $user, // <-- Ajout de l'utilisateur connecté
