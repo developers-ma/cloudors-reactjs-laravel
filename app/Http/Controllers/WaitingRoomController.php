@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClinicStatus;
 use App\Models\Patient;
+use App\Models\Consultation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -45,9 +46,24 @@ class WaitingRoomController extends Controller
     public function end(Request $request)
     {
         $validated = $request->validate(['patient_id' => 'required|exists:patients,id']);
+
+        // On trouve la consultation la plus récente pour ce patient qui n'est pas terminée
+        $consultation = Consultation::where('patient_id', $validated['patient_id'])
+            ->where('is_completed', false)
+            ->latest('date')
+            ->first();
+
+        if ($consultation) {
+            $consultation->update(['is_completed' => true]);
+        }
+
         ClinicStatus::where('patient_id', $validated['patient_id'])->delete();
         
-        return $this->getCurrentStatus();
+        // On retourne le statut ET la consultation mise à jour
+        return response()->json([
+            'status' => $this->getCurrentStatus()->getData(),
+            'updated_consultation' => $consultation
+        ]);
     }
     
     // Annule la consultation et remet le patient en attente

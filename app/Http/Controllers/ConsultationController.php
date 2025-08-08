@@ -124,7 +124,7 @@ class ConsultationController extends Controller
                     'date' => now(),
                     'reason' => $validatedData['reason'],
                     'assessment' => $assessmentText, // Utilise le texte généré comme diagnostic
-                    'is_completed' => true,
+                    'is_completed' => false,
                 ]);
 
                 // 2. Créer la facture
